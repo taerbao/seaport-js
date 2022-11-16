@@ -4,6 +4,7 @@ import {
   BigNumberish,
   Contract,
   ethers,
+  Overrides,
   PayableOverrides,
   providers,
 } from "ethers";
@@ -653,6 +654,7 @@ export class Seaport {
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
     domain = "",
+    overrides = {},
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -664,6 +666,7 @@ export class Seaport {
     conduitKey?: string;
     recipientAddress?: string;
     domain?: string;
+    overrides?: Overrides;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -756,6 +759,7 @@ export class Seaport {
         signer: fulfiller,
         tips: tipConsiderationItems,
         domain,
+        overrides,
       });
     }
 
@@ -781,6 +785,7 @@ export class Seaport {
       fulfillerOperator,
       recipientAddress,
       domain,
+      overrides,
     });
   }
 

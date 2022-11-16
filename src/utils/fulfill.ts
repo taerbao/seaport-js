@@ -4,6 +4,7 @@ import {
   ContractTransaction,
   ethers,
   Signer,
+  Overrides,
 } from "ethers";
 import type {
   Seaport as SeaportContract,
@@ -190,6 +191,7 @@ export async function fulfillBasicOrder({
   tips = [],
   conduitKey = NO_CONDUIT,
   domain,
+  overrides = {},
 }: {
   order: Order;
   seaportContract: Seaport;
@@ -202,6 +204,7 @@ export async function fulfillBasicOrder({
   tips?: ConsiderationItem[];
   conduitKey: string;
   domain?: string;
+  overrides?: Overrides;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -282,7 +285,7 @@ export async function fulfillBasicOrder({
     zoneHash: order.parameters.zoneHash,
   };
 
-  const payableOverrides = { value: totalNativeAmount };
+  const payableOverrides = { value: totalNativeAmount, ...overrides };
 
   const approvalActions = await getApprovalActions(
     insufficientApprovals,
@@ -294,6 +297,7 @@ export async function fulfillBasicOrder({
     transactionMethods: getTransactionMethods(
       seaportContract.connect(signer),
       "fulfillBasicOrder",
+      // override
       [basicOrderParameters, payableOverrides],
       domain
     ),
@@ -327,6 +331,7 @@ export async function fulfillStandardOrder({
   recipientAddress,
   signer,
   domain,
+  overrides,
 }: {
   order: Order;
   unitsToFill?: BigNumberish;
@@ -346,6 +351,7 @@ export async function fulfillStandardOrder({
   timeBasedItemParams: TimeBasedItemParams;
   signer: Signer;
   domain?: string;
+  overrides?: Overrides;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -417,7 +423,7 @@ export async function fulfillStandardOrder({
     fulfillerOperator,
   });
 
-  const payableOverrides = { value: totalNativeAmount };
+  const payableOverrides = { value: totalNativeAmount, ...overrides };
 
   const approvalActions = await getApprovalActions(
     insufficientApprovals,
@@ -530,6 +536,7 @@ export async function fulfillAvailableOrders({
   signer,
   recipientAddress,
   domain,
+  overrides,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
   seaportContract: Seaport;
@@ -541,6 +548,7 @@ export async function fulfillAvailableOrders({
   signer: Signer;
   recipientAddress: string;
   domain?: string;
+  overrides?: Overrides;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -661,7 +669,7 @@ export async function fulfillAvailableOrders({
     }
   );
 
-  const payableOverrides = { value: totalNativeAmount };
+  const payableOverrides = { value: totalNativeAmount, ...overrides };
 
   const approvalActions = await getApprovalActions(
     totalInsufficientApprovals,
