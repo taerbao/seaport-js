@@ -16,7 +16,9 @@ chai.use(sinonChai);
 
 type Fixture = {
   seaportContract: SeaportContract;
+  seaportv12Contract: SeaportContract;
   seaport: Seaport;
+  seaportv12: Seaport;
   domainRegistry: DomainRegistry;
   testErc721: TestERC721;
   testErc20: TestERC20;
@@ -31,7 +33,13 @@ export const describeWithFixture = (
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {
-      const SeaportFactory = await ethers.getContractFactory("Seaport");
+      const SeaportFactory = await ethers.getContractFactory(
+        "seaport/contracts/Seaport.sol:Seaport"
+      );
+
+      const Seaportv12Factory = await ethers.getContractFactory(
+        "seaport_v1_4/contracts/Seaport.sol:Seaport"
+      );
 
       const ConduitControllerFactory = await ethers.getContractFactory(
         "ConduitController"
@@ -39,9 +47,13 @@ export const describeWithFixture = (
 
       const conduitController = await ConduitControllerFactory.deploy();
 
-      const seaportContract = await SeaportFactory.deploy(
+      const seaportContract = (await SeaportFactory.deploy(
         conduitController.address
-      );
+      )) as SeaportContract;
+
+      const seaportv12Contract = (await Seaportv12Factory.deploy(
+        conduitController.address
+      )) as SeaportContract;
 
       await seaportContract.deployed();
 
@@ -56,6 +68,14 @@ export const describeWithFixture = (
           contractAddress: seaportContract.address,
           domainRegistryAddress: domainRegistry.address,
         },
+      });
+
+      const seaportv12 = new Seaport(ethers.provider, {
+        overrides: {
+          contractAddress: seaportv12Contract.address,
+          domainRegistryAddress: domainRegistry.address,
+        },
+        seaportVersion: "1.4",
       });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");
@@ -73,7 +93,9 @@ export const describeWithFixture = (
       // In order for cb to get the correct fixture values we have
       // to pass a reference to an object that you we mutate.
       fixture.seaportContract = seaportContract;
+      fixture.seaportv12Contract = seaportv12Contract;
       fixture.seaport = seaport;
+      fixture.seaportv12 = seaportv12;
       fixture.domainRegistry = domainRegistry;
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;

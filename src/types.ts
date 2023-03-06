@@ -28,6 +28,9 @@ export type SeaportConfig = {
   // A mapping of conduit key to conduit
   conduitKeyToConduit?: Record<string, string>;
 
+  // The Seaport version to use
+  seaportVersion?: "1.1" | "1.4";
+
   overrides?: {
     contractAddress?: string;
     domainRegistryAddress?: string;
@@ -91,7 +94,7 @@ export type OrderParameters = {
   conduitKey: string;
 };
 
-export type OrderComponents = OrderParameters & { counter: number };
+export type OrderComponents = OrderParameters & { counter: BigNumberish };
 
 export type Order = {
   parameters: OrderParameters;
@@ -163,7 +166,7 @@ export type CreateOrderInput = {
   endTime?: string;
   offer: readonly CreateInputItem[];
   consideration: readonly ConsiderationInputItem[];
-  counter?: number;
+  counter?: BigNumberish;
   fees?: readonly Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
@@ -224,6 +227,12 @@ export type CreateOrderAction = {
   createOrder: () => Promise<OrderWithCounter>;
 };
 
+export type CreateBulkOrdersAction = {
+  type: "createBulk";
+  getMessageToSign: () => Promise<string>;
+  createBulkOrders: () => Promise<OrderWithCounter[]>;
+};
+
 export type TransactionAction = ApprovalAction | ExchangeAction;
 
 export type CreateOrderActions = readonly [
@@ -231,17 +240,30 @@ export type CreateOrderActions = readonly [
   CreateOrderAction
 ];
 
+export type CreateBulkOrdersActions = readonly [
+  ...ApprovalAction[],
+  CreateBulkOrdersAction
+];
+
 export type OrderExchangeActions<T> = readonly [
   ...ApprovalAction[],
   ExchangeAction<T>
 ];
 
-export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
+export type OrderUseCase<
+  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction
+> = {
   actions: T extends CreateOrderAction
     ? CreateOrderActions
+    : T extends CreateBulkOrdersAction
+    ? CreateBulkOrdersActions
     : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
   executeAllActions: () => Promise<
-    T extends CreateOrderAction ? OrderWithCounter : ContractTransaction
+    T extends CreateOrderAction
+      ? OrderWithCounter
+      : T extends CreateBulkOrdersAction
+      ? OrderWithCounter[]
+      : ContractTransaction
   >;
 };
 
@@ -303,7 +325,7 @@ export type SeaportContract = TypeChainSeaportContract & {
     ): Promise<BigNumber>;
   };
 
-  populateTranscation: TypeChainSeaportContract["populateTransaction"] & {
+  populateTransaction: TypeChainSeaportContract["populateTransaction"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],

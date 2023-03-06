@@ -2,6 +2,7 @@ import { CallOverrides, Contract, Overrides, PayableOverrides } from "ethers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 
 import {
+  CreateBulkOrdersAction,
   CreateOrderAction,
   ExchangeAction,
   OrderUseCase,
@@ -10,7 +11,7 @@ import {
 } from "../types";
 
 export const executeAllActions = async <
-  T extends CreateOrderAction | ExchangeAction
+  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction
 >(
   actions: OrderUseCase<T>["actions"]
 ) => {
@@ -24,9 +25,14 @@ export const executeAllActions = async <
 
   const finalAction = actions[actions.length - 1] as T;
 
-  return finalAction.type === "create"
-    ? await finalAction.createOrder()
-    : await finalAction.transactionMethods.transact();
+  switch (finalAction.type) {
+    case "create":
+      return finalAction.createOrder();
+    case "createBulk":
+      return finalAction.createBulkOrders();
+    default:
+      return finalAction.transactionMethods.transact();
+  }
 };
 
 const instanceOfOverrides = <
