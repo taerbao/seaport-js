@@ -374,7 +374,6 @@ export async function fulfillStandardOrder(
   const orderWithAdjustedFills = unitsToFill
     ? mapOrderAmountsFromUnitsToFill(order, {
         unitsToFill,
-        totalFilled,
         totalSize,
       })
     : // Else, we adjust the order by the remaining order left to be fulfilled
@@ -585,7 +584,6 @@ export async function fulfillAvailableOrders({
       order: orderMetadata.unitsToFill
         ? mapOrderAmountsFromUnitsToFill(orderMetadata.order, {
             unitsToFill: orderMetadata.unitsToFill,
-            totalFilled: orderMetadata.orderStatus.totalFilled,
             totalSize: orderMetadata.orderStatus.totalSize,
           })
         : // Else, we adjust the order by the remaining order left to be fulfilled
@@ -598,7 +596,15 @@ export async function fulfillAvailableOrders({
 
   let totalNativeAmount = BigNumber.from(0);
   const totalInsufficientApprovals: InsufficientApprovals = [];
-  const hasCriteriaItems = false;
+  const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
+    .flatMap((orderMetadata) => [
+      orderMetadata.order.parameters.offer,
+      orderMetadata.order.parameters.consideration,
+    ])
+    .flat()
+    .filter(({ itemType }) => isCriteriaItem(itemType));
+
+  const hasCriteriaItems = criteriaOffersAndConsiderations.length > 0;
 
   const addApprovalIfNeeded = (
     orderInsufficientApprovals: InsufficientApprovals
